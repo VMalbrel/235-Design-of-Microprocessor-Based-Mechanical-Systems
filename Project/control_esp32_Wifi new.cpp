@@ -1,15 +1,16 @@
 #include <WiFi.h>
 
-// Right motor
+// Right Motor
 int enableRightMotor = 27; // ENA
 int rightMotorPin1   = 14; // IN1
 int rightMotorPin2   = 33; // IN2
 
-// Left motor
+// Left Motor
 int enableLeftMotor = 32; // ENB
 int leftMotorPin1   = 12; // IN3
 int leftMotorPin2   = 13; // IN4
 
+// IR Sensors
 int leftMostIR = 39; //A1
 int leftIR = 34; // A2
 int rightIR = 36; // A3
@@ -119,66 +120,86 @@ void loop()
     while (client.connected()) {
       if (client.available()) {
         char command = client.read();
-
-        int rightMotorSpeed = 0;
-        int leftMotorSpeed = 0;
         
         // ON OFF Buttons
-        if (command = 'ON') {
-          rightMotorSpeed = speedMotorMax;
-          leftMotorSpeed  = speedMotorMax;
+        if (command = 'START') {
+          bool ON = true;
         }
-        if (command = 'OFF') {
+        if (command = 'STOP') {
+          bool ON = false;
           rightMotorSpeed = speedMotorOFF;
           leftMotorSpeed  = speedMotorOFF;
         }
-        // IR Sensor
-        if leftMostIR == 1 {
-          rightMotorSpeed = speedMotorMax;
-          leftMotorSpeed  = -speedMotorMedium;
+        // Check mode of operation
+        if (command = 'AUTOMATIC')
+          bool automatic = true;
+        if (command = 'MANUAL')
+          int automatic = false;
+        
+        // Automatic Operation - IR Sensor
+        if automatic == true {
+          if ON == true {
+            if leftMostIR == 1 { // Left Most IR Sensor Active
+              rightMotorSpeed = speedMotorMax;
+              leftMotorSpeed  = -speedMotorMedium;
+            }
+            if leftIR == 1 { // Left Middle IR Sensor Active
+              rightMotorSpeed = speedMotorMax;
+              leftMotorSpeed  = speedMotorMedium;
+            }
+            if rightIR == 1 { // Right Middle IR Sensor Active
+              rightMotorSpeed = speedMotorMedium;
+              leftMotorSpeed  = speedMotorMax;
+            }
+            if rightIR == 1 { // Right Most IR Sensor Active
+              rightMotorSpeed = -speedMotorMedium;
+              leftMotorSpeed  = speedMotorMax;
+            }
+            else {
+              rightMotorSpeed = speedMotorOFF;
+              leftMotorSpeed  = speedMotorOFF;
+            }
+          }
         }
-        if leftIR == 1 {
-          rightMotorSpeed = speedMotorMax;
-          leftMotorSpeed  = speedMotorMedium;
-        }
-        if rightIR == 1 {
-          rightMotorSpeed = speedMotorMedium;
-          leftMotorSpeed  = speedMotorMax;
-        }
-        if rightIR == 1 {
-          rightMotorSpeed = -speedMotorMedium;
-          leftMotorSpeed  = speedMotorMax;
-        }
-        // if (command == 'U') {
-        //   rightMotorSpeed = speed_motor;
-        //   leftMotorSpeed  = speed_motor;
-        // }
-        // else if (command == 'D') {
-        //   rightMotorSpeed = -speed_motor;
-        //   leftMotorSpeed  = -speed_motor;
-        // }
-        // else if (command == 'L') {
-        //   rightMotorSpeed = speed_motor;
-        //   leftMotorSpeed  = -speed_motor;
-        // }
-        // else if (command == 'R') {
-        //   rightMotorSpeed = -speed_motor;
-        //   leftMotorSpeed  = speed_motor;
-        // }
-        // else if (command == '1') {
-        //   speed_motor = 100;  // slow
-        // }
-        // else if (command == '2') {
-        //   speed_motor = 180;  // medium
-        // }
-        // else if (command == '3') {
-        //   speed_motor = 255;  // fast
-        // }
-        // else {
-        //   rightMotorSpeed = 0;
-        //   leftMotorSpeed  = 0;
-        // }
 
+        // Manual Operation
+        if automatic == false {
+          if (command == 'U') { // Forward
+            rightMotorSpeed = speed_motor;
+            leftMotorSpeed  = speed_motor;
+            delay(100);
+          }
+          else if (command == 'D') { // Backward
+            rightMotorSpeed = -speed_motor;
+            leftMotorSpeed  = -speed_motor;
+            delay(100);
+          }
+          else if (command == 'L') { // Left Turn
+            rightMotorSpeed = speed_motor;
+            leftMotorSpeed  = -speed_motor;
+            delay(100);
+          }
+          else if (command == 'R') { // Right Turn
+            rightMotorSpeed = -speed_motor;
+            leftMotorSpeed  = speed_motor;
+            delay(100);
+          }
+          // Change Motor Speed
+          else if (command == '1') { // Slow
+            speed_motor = 100;
+          }
+          else if (command == '2') { // Medium
+            speed_motor = speedMotorMedium;
+          }
+          else if (command == '3') { // Fast
+            speed_motor = speedMotorMax;
+          }
+          // Stop Motors
+          rightMotorSpeed = speedMotorOFF;
+          leftMotorSpeed  = speedMotorOFF;
+        }
+        
+        // Turn on Motors
         rotateMotor(rightMotorSpeed, leftMotorSpeed);
 
         // Optional: send back confirmation
