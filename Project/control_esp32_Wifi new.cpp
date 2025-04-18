@@ -16,7 +16,9 @@ int rightIR = 36; // A3
 int rightMostIR = 4; //A4
 
 #define MAX_MOTOR_SPEED 255
-int speed_motor = 200;
+int speedMotorMax = 255;
+int speedMotorMedium = 180;
+int speedMotorOFF = 0;
 
 const int PWMFreq = 1000; /* 1 KHz */
 const int PWMResolution = 8;
@@ -120,36 +122,62 @@ void loop()
 
         int rightMotorSpeed = 0;
         int leftMotorSpeed = 0;
-
-        if (command == 'U') {
-          rightMotorSpeed = speed_motor;
-          leftMotorSpeed  = speed_motor;
+        
+        // ON OFF Buttons
+        if (command = 'ON') {
+          rightMotorSpeed = speedMotorMax;
+          leftMotorSpeed  = speedMotorMax;
         }
-        else if (command == 'D') {
-          rightMotorSpeed = -speed_motor;
-          leftMotorSpeed  = -speed_motor;
+        if (command = 'OFF') {
+          rightMotorSpeed = speedMotorOFF;
+          leftMotorSpeed  = speedMotorOFF;
         }
-        else if (command == 'L') {
-          rightMotorSpeed = speed_motor;
-          leftMotorSpeed  = -speed_motor;
+        // IR Sensor
+        if leftMostIR == 1 {
+          rightMotorSpeed = speedMotorMax;
+          leftMotorSpeed  = -speedMotorMedium;
         }
-        else if (command == 'R') {
-          rightMotorSpeed = -speed_motor;
-          leftMotorSpeed  = speed_motor;
+        if leftIR == 1 {
+          rightMotorSpeed = speedMotorMax;
+          leftMotorSpeed  = speedMotorMedium;
         }
-        else if (command == '1') {
-          speed_motor = 100;  // slow
+        if rightIR == 1 {
+          rightMotorSpeed = speedMotorMedium;
+          leftMotorSpeed  = speedMotorMax;
         }
-        else if (command == '2') {
-          speed_motor = 180;  // medium
+        if rightIR == 1 {
+          rightMotorSpeed = -speedMotorMedium;
+          leftMotorSpeed  = speedMotorMax;
         }
-        else if (command == '3') {
-          speed_motor = 255;  // fast
-        }
-        else {
-          rightMotorSpeed = 0;
-          leftMotorSpeed  = 0;
-        }
+        // if (command == 'U') {
+        //   rightMotorSpeed = speed_motor;
+        //   leftMotorSpeed  = speed_motor;
+        // }
+        // else if (command == 'D') {
+        //   rightMotorSpeed = -speed_motor;
+        //   leftMotorSpeed  = -speed_motor;
+        // }
+        // else if (command == 'L') {
+        //   rightMotorSpeed = speed_motor;
+        //   leftMotorSpeed  = -speed_motor;
+        // }
+        // else if (command == 'R') {
+        //   rightMotorSpeed = -speed_motor;
+        //   leftMotorSpeed  = speed_motor;
+        // }
+        // else if (command == '1') {
+        //   speed_motor = 100;  // slow
+        // }
+        // else if (command == '2') {
+        //   speed_motor = 180;  // medium
+        // }
+        // else if (command == '3') {
+        //   speed_motor = 255;  // fast
+        // }
+        // else {
+        //   rightMotorSpeed = 0;
+        //   leftMotorSpeed  = 0;
+        // }
 
         rotateMotor(rightMotorSpeed, leftMotorSpeed);
 
