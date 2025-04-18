@@ -16,6 +16,7 @@ int leftIR = 34; // A2
 int rightIR = 36; // A3
 int rightMostIR = 4; //A4
 
+// Motor Settings
 #define MAX_MOTOR_SPEED 255
 int speedMotorMax = 255;
 int speedMotorMedium = 180;
@@ -25,6 +26,10 @@ const int PWMFreq = 1000; /* 1 KHz */
 const int PWMResolution = 8;
 const int rightMotorPWMSpeedChannel = 4;
 const int leftMotorPWMSpeedChannel = 5;
+
+// Operation Variable Initialization
+static bool ON = false;
+static bool automatic = false;
 
 WiFiServer server(1234);  // Create a TCP server on port 1234
 
@@ -122,36 +127,42 @@ void loop()
         char command = client.read();
         
         // ON OFF Buttons
-        if (command = 'START') {
-          bool ON = true;
+        if (command = 'S') {
+          ON = true;
         }
-        if (command = 'STOP') {
-          bool ON = false;
+        if (command = 'S') {
+          ON = false;
           rightMotorSpeed = speedMotorOFF;
           leftMotorSpeed  = speedMotorOFF;
         }
         // Check mode of operation
-        if (command = 'AUTOMATIC')
-          bool automatic = true;
-        if (command = 'MANUAL')
-          int automatic = false;
+        if (command = 'A') // Automatic
+          automatic = true;
+        if (command = 'M') // Manual
+          automatic = false;
+
+        // Read IR Sensors
+        int lmIR = digitalRead(leftMostIR); // Left Most IR Sensor
+        int lIR = digitalRead(leftIR); // Left Middle IR Sensor
+        int rIR = digitalRead(rightIR); // Right Middle IR Sensor
+        int rmIR = digitalRead(rightMostIR); // Right Most IR Sensor
         
         // Automatic Operation - IR Sensor
         if automatic == true {
           if ON == true {
-            if leftMostIR == 1 { // Left Most IR Sensor Active
+            if lmIR == 1 { // Left Most IR Sensor Active
               rightMotorSpeed = speedMotorMax;
               leftMotorSpeed  = -speedMotorMedium;
             }
-            if leftIR == 1 { // Left Middle IR Sensor Active
+            if lIR == 1 { // Left Middle IR Sensor Active
               rightMotorSpeed = speedMotorMax;
               leftMotorSpeed  = speedMotorMedium;
             }
-            if rightIR == 1 { // Right Middle IR Sensor Active
+            if rIR == 1 { // Right Middle IR Sensor Active
               rightMotorSpeed = speedMotorMedium;
               leftMotorSpeed  = speedMotorMax;
             }
-            if rightIR == 1 { // Right Most IR Sensor Active
+            if rmIR == 1 { // Right Most IR Sensor Active
               rightMotorSpeed = -speedMotorMedium;
               leftMotorSpeed  = speedMotorMax;
             }
@@ -204,11 +215,20 @@ void loop()
 
         // Optional: send back confirmation
         client.println("Command received: " + String(command));
+
+        // Send IR Data
+        Serial.print("IR: LM=");
+        Serial.print(lmIR);
+        Serial.print(", L=");
+        Serial.print(lIR);
+        Serial.print(", R=");
+        Serial.print(rIR);
+        Serial.print(", RM=");
+        Serial.println(rmIR);
       }
     }
     client.stop();
     Serial.println("Client disconnected.");
   }
-
   delay(10);  // Prevent overload
 }
