@@ -21,6 +21,9 @@ int rightMostIR = 4; //A4
 int speedMotorMax = 255;
 int speedMotorMedium = 180;
 int speedMotorOFF = 0;
+int rightMotorSpeed = 0;
+int leftMotorSpeed = 0;
+int speed_motor = speedMotorMedium;
 
 const int PWMFreq = 1000; /* 1 KHz */
 const int PWMResolution = 8;
@@ -127,18 +130,18 @@ void loop()
         char command = client.read();
         
         // ON OFF Buttons
-        if (command = 'S') {
+        if (command == 'S') { // ON
           ON = true;
         }
-        if (command = 'S') {
+        if (command == 'T') { // OFF
           ON = false;
           rightMotorSpeed = speedMotorOFF;
           leftMotorSpeed  = speedMotorOFF;
         }
         // Check mode of operation
-        if (command = 'A') // Automatic
+        if (command == 'A') // Automatic
           automatic = true;
-        if (command = 'M') // Manual
+        if (command == 'M') // Manual
           automatic = false;
 
         // Read IR Sensors
@@ -175,26 +178,6 @@ void loop()
 
         // Manual Operation
         if automatic == false {
-          if (command == 'U') { // Forward
-            rightMotorSpeed = speed_motor;
-            leftMotorSpeed  = speed_motor;
-            delay(100);
-          }
-          else if (command == 'D') { // Backward
-            rightMotorSpeed = -speed_motor;
-            leftMotorSpeed  = -speed_motor;
-            delay(100);
-          }
-          else if (command == 'L') { // Left Turn
-            rightMotorSpeed = speed_motor;
-            leftMotorSpeed  = -speed_motor;
-            delay(100);
-          }
-          else if (command == 'R') { // Right Turn
-            rightMotorSpeed = -speed_motor;
-            leftMotorSpeed  = speed_motor;
-            delay(100);
-          }
           // Change Motor Speed
           else if (command == '1') { // Slow
             speed_motor = 100;
@@ -205,13 +188,30 @@ void loop()
           else if (command == '3') { // Fast
             speed_motor = speedMotorMax;
           }
+          // Move
+          if (command == 'U') { // Forward
+            rightMotorSpeed = speed_motor;
+            leftMotorSpeed  = speed_motor;
+          }
+          else if (command == 'D') { // Backward
+            rightMotorSpeed = -speed_motor;
+            leftMotorSpeed  = -speed_motor;
+          }
+          else if (command == 'L') { // Left Turn
+            rightMotorSpeed = speed_motor;
+            leftMotorSpeed  = -speed_motor;
+          }
+          else if (command == 'R') { // Right Turn
+            rightMotorSpeed = -speed_motor;
+            leftMotorSpeed  = speed_motor;
+          }
+          // Turn on Motors
+          rotateMotor(rightMotorSpeed, leftMotorSpeed);
+          delay(100); // Wait
           // Stop Motors
           rightMotorSpeed = speedMotorOFF;
           leftMotorSpeed  = speedMotorOFF;
         }
-        
-        // Turn on Motors
-        rotateMotor(rightMotorSpeed, leftMotorSpeed);
 
         // Optional: send back confirmation
         client.println("Command received: " + String(command));
