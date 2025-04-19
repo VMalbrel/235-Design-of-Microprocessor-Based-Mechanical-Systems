@@ -179,7 +179,7 @@ void loop()
         // Manual Operation
         if automatic == false {
           // Change Motor Speed
-          else if (command == '1') { // Slow
+          if (isDigit(command)) {
             speed_motor = 100;
           }
           else if (command == '2') { // Medium
