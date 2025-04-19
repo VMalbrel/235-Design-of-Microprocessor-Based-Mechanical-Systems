@@ -129,7 +129,7 @@ void loop()
       if (client.available()) {
         char command = client.read();
         
-        // ON OFF Buttons
+        // ON OFF Button
         if (command == 'S') { // ON
           ON = true;
         }
