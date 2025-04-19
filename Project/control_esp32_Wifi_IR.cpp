@@ -18,8 +18,8 @@ int rightMostIR = 4; //A4
 
 // Motor Settings
 #define MAX_MOTOR_SPEED 255
-int speedMotorMax = 255;
-int speedMotorMedium = 180;
+int speedMotorMax = 0;
+int speedMotorMedium = 0;
 int speedMotorOFF = 0;
 int rightMotorSpeed = 0;
 int leftMotorSpeed = 0;
@@ -138,11 +138,21 @@ void loop()
           rightMotorSpeed = speedMotorOFF;
           leftMotorSpeed  = speedMotorOFF;
         }
+
         // Check mode of operation
-        if (command == 'A') // Automatic
+        if (command == 'A') {// Automatic
           automatic = true;
-        if (command == 'M') // Manual
+        }
+        if (command == 'M') {// Manual
           automatic = false;
+        }
+
+        // Change Motor Speed
+        if (isDigit(command)) {
+          int number = command - '0' + 1;
+          speedMotorMax = MAX_MOTOR_SPEED*(number/10);
+          speedMotorMedium = speedMotorMax *.75;
+        }
 
         // Read IR Sensors
         int lmIR = digitalRead(leftMostIR); // Left Most IR Sensor
@@ -178,16 +188,6 @@ void loop()
 
         // Manual Operation
         if automatic == false {
-          // Change Motor Speed
-          if (isDigit(command)) {
-            speed_motor = 100;
-          }
-          else if (command == '2') { // Medium
-            speed_motor = speedMotorMedium;
-          }
-          else if (command == '3') { // Fast
-            speed_motor = speedMotorMax;
-          }
           // Move
           if (command == 'U') { // Forward
             rightMotorSpeed = speed_motor;
@@ -207,10 +207,6 @@ void loop()
           }
           // Turn on Motors
           rotateMotor(rightMotorSpeed, leftMotorSpeed);
-          delay(100); // Wait
-          // Stop Motors
-          rightMotorSpeed = speedMotorOFF;
-          leftMotorSpeed  = speedMotorOFF;
         }
 
         // Optional: send back confirmation
