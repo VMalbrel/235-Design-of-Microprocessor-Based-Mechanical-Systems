@@ -210,7 +210,7 @@ void loop()
         }
 
         // Optional: send back confirmation
-        client.println("Command received: " + String(command));
+        // client.println("Command received: " + String(command));
 
         // Send IR Data
         Serial.print("IR: LM=");
