@@ -70,6 +70,7 @@ void setup() {
 
   serverMotor.begin();
   serverIR.begin();
+  pinMode(LED_BUILTIN, OUTPUT);
   digitalWrite(LED_BUILTIN, HIGH);
 }
 
@@ -118,9 +119,9 @@ void loop() {
   static unsigned long lastSendTime = 0;
   if (clientIR && clientIR.connected() && millis() - lastSendTime >= 100) {
     lastSendTime = millis();
-    String irData = String(digitalRead(leftMostIR)) + "," +
-                    String(digitalRead(leftIR)) + "," +
-                    String(digitalRead(rightIR)) + "," +
+    String irData = String(digitalRead(leftMostIR)) +
+                    String(digitalRead(leftIR)) +
+                    String(digitalRead(rightIR)) +
                     String(digitalRead(rightMostIR));
     clientIR.println(irData);
   }
