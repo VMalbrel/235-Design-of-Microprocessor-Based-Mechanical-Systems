@@ -70,6 +70,7 @@ void setup() {
 
   serverMotor.begin();
   serverIR.begin();
+  digitalWrite(LED_BUILTIN, HIGH);
 }
 
 void loop() {
