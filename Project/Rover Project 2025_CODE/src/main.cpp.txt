@@ -1,0 +1,158 @@
+#include <WiFi.h>
+
+// Motor pins
+int enableRightMotor = 27; // ENA
+int rightMotorPin1   = 14; // IN1
+int rightMotorPin2   = 33; // IN2
+
+int enableLeftMotor = 32; // ENB
+int leftMotorPin1   = 12; // IN3
+int leftMotorPin2   = 13; // IN4
+
+// IR Sensors
+int leftMostIR  = 39; // A1
+int leftIR      = 34; // A2
+int rightIR     = 36; // A3
+int rightMostIR = 4;  // A4
+
+#define MAX_MOTOR_SPEED 255
+int speed_motor = 200;
+
+const int PWMFreq = 1000;
+const int PWMResolution = 8;
+const int rightMotorPWMSpeedChannel = 4;
+const int leftMotorPWMSpeedChannel  = 5;
+
+WiFiServer server(1234);
+
+void rotateMotor(int rightMotorSpeed, int leftMotorSpeed) {
+  if (rightMotorSpeed < 0) {
+    digitalWrite(rightMotorPin1, LOW);
+    digitalWrite(rightMotorPin2, HIGH);
+  } else if (rightMotorSpeed > 0) {
+    digitalWrite(rightMotorPin1, HIGH);
+    digitalWrite(rightMotorPin2, LOW);
+  } else {
+    digitalWrite(rightMotorPin1, LOW);
+    digitalWrite(rightMotorPin2, LOW);
+  }
+
+  if (leftMotorSpeed < 0) {
+    digitalWrite(leftMotorPin1, LOW);
+    digitalWrite(leftMotorPin2, HIGH);
+  } else if (leftMotorSpeed > 0) {
+    digitalWrite(leftMotorPin1, HIGH);
+    digitalWrite(leftMotorPin2, LOW);
+  } else {
+    digitalWrite(leftMotorPin1, LOW);
+    digitalWrite(leftMotorPin2, LOW);
+  }
+
+  ledcWrite(rightMotorPWMSpeedChannel, abs(rightMotorSpeed));
+  ledcWrite(leftMotorPWMSpeedChannel, abs(leftMotorSpeed));
+}
+
+void setUpPinModes() {
+  pinMode(enableRightMotor, OUTPUT);
+  pinMode(rightMotorPin1, OUTPUT);
+  pinMode(rightMotorPin2, OUTPUT);
+
+  pinMode(enableLeftMotor, OUTPUT);
+  pinMode(leftMotorPin1, OUTPUT);
+  pinMode(leftMotorPin2, OUTPUT);
+
+  pinMode(leftMostIR, INPUT);
+  pinMode(leftIR, INPUT);
+  pinMode(rightIR, INPUT);
+  pinMode(rightMostIR, INPUT);
+
+  ledcSetup(rightMotorPWMSpeedChannel, PWMFreq, PWMResolution);
+  ledcSetup(leftMotorPWMSpeedChannel, PWMFreq, PWMResolution);
+  ledcAttachPin(enableRightMotor, rightMotorPWMSpeedChannel);
+  ledcAttachPin(enableLeftMotor, leftMotorPWMSpeedChannel);
+
+  rotateMotor(0, 0);
+}
+
+void setup() {
+  setUpPinModes();
+  Serial.begin(115200);
+
+  // Setup Wi-Fi AP
+  const char* ssid = "ESP32-ROVER";
+  const char* password = "12345678";
+  WiFi.softAP(ssid, password);
+  delay(100);
+
+  Serial.println("Access Point started.");
+  Serial.print("IP Address: ");
+  Serial.println(WiFi.softAPIP());
+
+  server.begin();
+  pinMode(LED_BUILTIN, OUTPUT);
+  digitalWrite(LED_BUILTIN, HIGH);
+}
+
+void loop() {
+  WiFiClient client = server.available();
+
+  if (client) {
+    Serial.println("Client connected.");
+    unsigned long lastIRSent = 0;
+
+    while (client.connected()) {
+      // Handle commands
+      if (client.available()) {
+        char command = client.read();
+        int rightMotorSpeed = 0;
+        int leftMotorSpeed = 0;
+
+        if (command == 'U') {
+          rightMotorSpeed = speed_motor;
+          leftMotorSpeed  = speed_motor;
+        } else if (command == 'D') {
+          rightMotorSpeed = -speed_motor;
+          leftMotorSpeed  = -speed_motor;
+        } else if (command == 'L') {
+          rightMotorSpeed = speed_motor;
+          leftMotorSpeed  = -speed_motor;
+        } else if (command == 'R') {
+          rightMotorSpeed = -speed_motor;
+          leftMotorSpeed  = speed_motor;
+        } else if (command == '1') {
+          speed_motor = 100;
+        } else if (command == '2') {
+          speed_motor = 180;
+        } else if (command == '3') {
+          speed_motor = 255;
+        } else {
+          rightMotorSpeed = 0;
+          leftMotorSpeed  = 0;
+        }
+
+        rotateMotor(rightMotorSpeed, leftMotorSpeed);
+        client.println("Command received: " + String(command));
+      }
+
+      // Periodically send IR sensor states every 100 ms
+      if (millis() - lastIRSent >= 100) {
+        int irLMost = digitalRead(leftMostIR);
+        int irLeft  = digitalRead(leftIR);
+        int irRight = digitalRead(rightIR);
+        int irRMost = digitalRead(rightMostIR);
+
+        String irData = "IR:" + String(irLMost) + "," + String(irLeft) + "," +
+                        String(irRight) + "," + String(irRMost);
+        client.println(irData);
+        lastIRSent = millis();
+      }
+
+      delay(1);  // CPU relief
+    }
+
+    client.stop();
+    Serial.println("Client disconnected.");
+  }
+
+  delay(10);  // Prevent overload
+}
