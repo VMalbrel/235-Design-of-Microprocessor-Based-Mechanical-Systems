@@ -15,15 +15,17 @@ const int rightMotorPWMSpeedChannel = 4;
 const int leftMotorPWMSpeedChannel = 5;
 
 // IR Sensors
-int leftMostIR = 39;
-int leftIR = 34;
-int rightIR = 36;
-int rightMostIR = 4;
+int leftMostIR = 36;
+int leftIR = 39;
+int rightIR = 34;
+int rightMostIR = 25;
 
 // Proximity Sensor
-int proximity = 0;
+int proximityTrig = 22;
+int proximityEcho = 20;
+
 // Buzzer
-int buzzer = 0;
+int buzzer= 4;
 
 // Initialize Wifi Ports
 WiFiServer serverMotor(1);
@@ -42,6 +44,20 @@ void rotateMotor(int rightMotorSpeed, int leftMotorSpeed) {
   digitalWrite(leftMotorPin2,  leftMotorSpeed < 0);
   ledcWrite(rightMotorPWMSpeedChannel, abs(rightMotorSpeed));
   ledcWrite(leftMotorPWMSpeedChannel, abs(leftMotorSpeed));
+}
+
+float distance() {
+  // Trigger the ultrasonic pulse
+  digitalWrite(proximityTrig, LOW);
+  delayMicroseconds(2);
+  digitalWrite(proximityTrig, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(proximityTrig, LOW);
+  // Measure the duration of the echo pulse
+  long duration = pulseIn(proximityEcho, HIGH, 30000); // 30 ms timeout (~5 m)
+  // Convert time to distance (speed of sound = 34300 cm/s)
+  float distance_cm = (duration / 2.0) * 0.0343;
+  return distance_cm;  // return distance in cm
 }
 
 // Setup Pins
@@ -66,14 +82,15 @@ void setUpPinModes() {
   pinMode(rightIR, INPUT);
   pinMode(rightMostIR, INPUT);
   // Proximity Sensor
-  // pinMode(proximity, INPUT);
-  // // Buzzer
-  // pinMode(buzzer, OUTPUT);
+  pinMode(proximityTrig, OUTPUT);
+  pinMode(proximityEcho, INPUT);
+  // Buzzer
+  pinMode(buzzer, OUTPUT);
 }
 
 void setup() {
   setUpPinModes();
-  Serial.begin(115200); // Need to Ensure we are at correct baud rate to see in serial monitor
+  Serial.begin(9600); // Need to Ensure we are at correct baud rate to see in serial monitor
   WiFi.softAP("ESP32-ROVER", "12345678");
   delay(100);
 
@@ -102,25 +119,46 @@ void loop() {
     if (clientVelocity) Serial.println("Velocity client connected");
   }
 
-  // Manual Motor Control
+  // Motor Control
   if (clientMotor && clientMotor.connected() && clientMotor.available()) {
     char command = clientMotor.read();
     int rightMotorSpeed = 0;
     int leftMotorSpeed = 0;
+    // Manual
     if (command == 'U') {
       rightMotorSpeed = speed_motor;
       leftMotorSpeed = speed_motor;
+      rotateMotor(rightMotorSpeed, leftMotorSpeed);
     } else if (command == 'D') {
       rightMotorSpeed = -speed_motor;
       leftMotorSpeed = -speed_motor;
+      rotateMotor(rightMotorSpeed, leftMotorSpeed);
     } else if (command == 'L') {
       rightMotorSpeed = speed_motor;
       leftMotorSpeed = -speed_motor;
+      rotateMotor(rightMotorSpeed, leftMotorSpeed);
     } else if (command == 'R') {
       rightMotorSpeed = -speed_motor;
       leftMotorSpeed = speed_motor;
+      rotateMotor(rightMotorSpeed, leftMotorSpeed);
+    } else if (command == 'S') {
+      rightMotorSpeed = 0;
+      leftMotorSpeed = 0;
+      rotateMotor(rightMotorSpeed, leftMotorSpeed);
+    // Automatic
+    } else if (command == 'A') {
+      if (digitalRead(leftMostIR) == 1) {
+        rotateMotor(MAX_MOTOR_SPEED, MAX_MOTOR_SPEED*.75);
+      } else if (digitalRead(leftIR) == 1) {
+        rotateMotor(MAX_MOTOR_SPEED, MAX_MOTOR_SPEED);
+      } else if (digitalRead(rightIR) == 1) {
+        rotateMotor(MAX_MOTOR_SPEED, MAX_MOTOR_SPEED);
+      } else if (digitalRead(rightMostIR) == 1) {
+        rotateMotor(MAX_MOTOR_SPEED*.75, MAX_MOTOR_SPEED);
+      } else {
+        rotateMotor(0, 0);
+      }
     }
-    rotateMotor(rightMotorSpeed, leftMotorSpeed);
   }
 
   // Send IR Sensor Data
@@ -143,18 +181,18 @@ void loop() {
     }
   }
   
-  // // Proximity Interrupt
-  // int distance = digitalRead(proximity);
-  // if (distance < 1) {
-  //   while (distance < 1) {
-  //     rotateMotor(0, 0);
-  //     digitalWrite(buzzer, HIGH);
-  //     delay(.25);
-  //     int distance = digitalRead(proximity);
-  //   }
-  //   digitalWrite(buzzer, LOW);
-  // }
+  // Proximity Interrupt
+  float d = distance();
 
+  if (d > 0 && d < 5) {
+    while (true) {
+      float d_check = distance();
+      if (d_check < 0 || d_check >= 5) break;
+      rotateMotor(0, 0);           // Stop motor
+      digitalWrite(buzzer, HIGH);  // Activate buzzer
+    }
+    digitalWrite(buzzer, LOW);     // Turn off buzzer
+  }
 
   delay(5); // Minimal delay to avoid CPU hogging
 }
