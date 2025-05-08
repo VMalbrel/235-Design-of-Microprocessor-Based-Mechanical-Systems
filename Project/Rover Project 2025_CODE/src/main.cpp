@@ -147,15 +147,14 @@ void loop() {
       rotateMotor(rightMotorSpeed, leftMotorSpeed);
     // Automatic
     } else if (command == 'A') {
-      if (digitalRead(leftMostIR) == 1) {
-        rotateMotor(MAX_MOTOR_SPEED, MAX_MOTOR_SPEED*.75);
-      } else if (digitalRead(leftIR) == 1) {
-        rotateMotor(MAX_MOTOR_SPEED, MAX_MOTOR_SPEED);
-      } else if (digitalRead(rightIR) == 1) {
-        rotateMotor(MAX_MOTOR_SPEED, MAX_MOTOR_SPEED);
-      } else if (digitalRead(rightMostIR) == 1) {
-        rotateMotor(MAX_MOTOR_SPEED*.75, MAX_MOTOR_SPEED);
-      } else {
+      if (digitalRead(leftMostIR) == 0) { // Right
+        rotateMotor(-speed_motor, speed_motor*.5);
+      } else if (digitalRead(rightMostIR) == 0) { // Left
+        rotateMotor(speed_motor*.5, -speed_motor);
+      } else if (digitalRead(rightMostIR) == 1 && digitalRead(rightMostIR) == 1) {
+        rotateMotor(-speed_motor, -speed_motor);
+      }
+      else {
         rotateMotor(0, 0);
       }
     }
@@ -169,7 +168,8 @@ void loop() {
                     String(digitalRead(leftIR)) +
                     String(digitalRead(rightIR)) +
                     String(digitalRead(rightMostIR));
-    clientIR.println(irData);
+    clientIR.print(irData);
+    Serial.println(irData);
   }
 
   // Change Velocity
